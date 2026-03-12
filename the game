@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dino Game</title>
+<style>
+body{
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+font-family:Arial;
+}
+#game{
+width:1000px;
+height:420px;
+background:#87ceeb;
+position:relative;
+overflow:hidden;
+border-radius:12px;
+box-shadow:0 10px 40px rgba(0,0,0,0.5);
+}
+#dino{
+position:absolute;
+bottom:25px;
+left:120px;
+font-size:50px;
+transform:scaleX(-1);
+}
+.jump{
+animation:jump 0.9s;
+}
+@keyframes jump{
+0%{bottom:25px}
+50%{bottom:220px}
+100%{bottom:25px}
+}
+.object{
+position:absolute;
+bottom:25px;
+right:-60px;
+font-size:35px;
+}
+#scoreBoard{
+position:absolute;
+top:10px;
+right:10px;
+background:white;
+padding:10px 15px;
+border-radius:8px;
+font-size:18px;
+}
+#gameOver{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:white;
+padding:25px;
+border-radius:10px;
+display:none;
+text-align:center;
+}
+button{
+padding:8px 16px;
+font-size:16px;
+cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div id="game">
+<div id="dino">🦖</div>
+<div id="scoreBoard">
+Score: <span id="score">0</span><br>
+High: <span id="highScore">0</span><br>
+Coins: <span id="coins">0</span><br>
+Stars: <span id="stars">0</span>
+</div>
+<div id="gameOver">
+<h2>Game Over</h2>
+<button onclick="restart()">Restart</button>
+</div>
+</div>
+<script>
+const dino=document.getElementById("dino")
+const game=document.getElementById("game")
+const scoreText=document.getElementById("score")
+const highScoreText=document.getElementById("highScore")
+const coinsText=document.getElementById("coins")
+const starsText=document.getElementById("stars")
+const gameOverScreen=document.getElementById("gameOver")
+let score=0
+let speed=5
+let running=true
+let invincible=false
+let coins=0
+let stars=0
+let highScore=localStorage.getItem("dinoHighScore")||0
+highScoreText.innerText=highScore
+function jump(){
+if(!dino.classList.contains("jump")){
+dino.classList.add("jump")
+setTimeout(()=>{
+dino.classList.remove("jump")
+},900)
+}
+}
+document.addEventListener("keydown",e=>{
+if(e.code==="Space") jump()
+})
+document.addEventListener("touchstart",jump)
+dino.addEventListener("mouseenter",jump)
+function collide(a,b){
+const r1=a.getBoundingClientRect()
+const r2=b.getBoundingClientRect()
+const padding=15
+const dinoBox={
+top:r1.top+padding,
+bottom:r1.bottom-padding,
+left:r1.left+padding,
+right:r1.right-padding
+}
+return !(
+dinoBox.top > r2.bottom ||
+dinoBox.bottom < r2.top ||
+dinoBox.right < r2.left ||
+dinoBox.left > r2.right
+)
+}
+function spawn(){
+let types=["🌵","🪨","🧱","🪙","⭐"]
+let type=types[Math.floor(Math.random()*types.length)]
+let obj=document.createElement("div")
+obj.classList.add("object")
+obj.innerText=type
+game.appendChild(obj)
+let pos=1000
+let move=setInterval(()=>{
+if(!running){
+clearInterval(move)
+return
+}
+pos-=speed
+obj.style.right=(1000-pos)+"px"
+if(type==="🪙" && collide(dino,obj)){
+coins++
+coinsText.innerText=coins
+score+=100
+scoreText.innerText=score
+obj.remove()
+clearInterval(move)
+}
+if(type==="⭐" && collide(dino,obj)){
+stars++
+starsText.innerText=stars
+invincible=true
+dino.style.color="gold"
+setTimeout(()=>{
+invincible=false
+dino.style.color="black"
+},5000)
+obj.remove()
+clearInterval(move)
+}
+if(["🌵","🪨","🧱"].includes(type)){
+if(collide(dino,obj)){
+if(!invincible){
+gameOver()
+}
+}
+}
+if(pos<0){
+obj.remove()
+clearInterval(move)
+}
+},20)
+}
+setInterval(()=>{
+if(running) spawn()
+},1900)
+setInterval(()=>{
+if(!running) return
+score++
+scoreText.innerText=score
+if(score%200===0){
+speed+=1
+}
+},100)
+function gameOver(){
+running=false
+if(score>highScore){
+highScore=score
+localStorage.setItem("dinoHighScore",highScore)
+}
+highScoreText.innerText=highScore
+gameOverScreen.style.display="block"
+}
+function restart(){
+location.reload()
+}
+</script>
+</body>
+</html>
